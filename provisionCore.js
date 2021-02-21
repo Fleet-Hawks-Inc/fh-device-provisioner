@@ -28,9 +28,10 @@ const http = require("https"); // or 'https' for https:// URLs
 const fs = require("fs");
 var colors = require("colors");
 const chalk = require("chalk");
+const { config } = require("aws-sdk");
 
-const THING_PREFIX = "FH-Thing";
-const GROUP_NAME_PREFIX = "FH-Group";
+const THING_PREFIX = "fh-thing";
+const GROUP_NAME_PREFIX = "fh-group";
 let NAME = "CORE_NAME";
 
 (async () => {
@@ -68,11 +69,10 @@ let NAME = "CORE_NAME";
       "FleetHawks - GreenGrass Provisioner : Provisions MiniEld with FleetHawks Cloud"
         .blue
     );
-    NAME = options.coreName;
+    NAME = options.coreName.toLowerCase();
     const AWS_ACCESS_KEY_ID = options.accessKey;
     const AWS_SECRET_ACCESS_KEY = options.secretAccessKey;
     const AWS_REGION = options.region;
-    console.log(AWS_REGION);
 
     const credentials = {
       accessKeyId: AWS_ACCESS_KEY_ID,
@@ -90,7 +90,7 @@ let NAME = "CORE_NAME";
     });
     // Create IOT Thing
     const iotThing = new CreateThingCommand({
-      thingName: `${THING_PREFIX}-${NAME}-Thing`,
+      thingName: `${THING_PREFIX}-${NAME}-thing`,
     });
     var iotThingResp = await iotClient.send(iotThing);
     thingName = iotThingResp.thingName;
@@ -132,7 +132,7 @@ let NAME = "CORE_NAME";
 
     // Create GCC Core Definition
     const gccCoreDef = new CreateCoreDefinitionCommand({
-      Name: `${GROUP_NAME_PREFIX}-${NAME}-CoreDefinition`,
+      Name: `${GROUP_NAME_PREFIX}-${NAME}-core-definition`,
 
       InitialVersion: {
         Cores: [
@@ -161,7 +161,7 @@ let NAME = "CORE_NAME";
         },
         Functions: [
           {
-            Id: gccCoreDefResponse.$metadata.requestId,
+            Id: uniqid(),
             FunctionArn:
               "arn:aws:lambda:us-east-2:112567001577:function:fh-eld-service-dev-execute:28",
 
@@ -175,6 +175,16 @@ let NAME = "CORE_NAME";
               },
             },
           },
+          {
+            Id: uniqid(),
+            FunctionArn:
+              "arn:aws:lambda:us-east-2:112567001577:function:fh-eld-dashboard-dev-execute:6",
+
+            FunctionConfiguration: {
+              Pinned: true,
+              Timeout: 300
+            },
+          },
         ],
       },
     });
@@ -182,11 +192,10 @@ let NAME = "CORE_NAME";
     const gccFunctionResponse = await gccClient.send(eldService);
     functionDefinitionId = gccFunctionResponse.Id;
     const gccCoreGroup = new CreateGroupCommand({
-      Name: `${GROUP_NAME_PREFIX}-${NAME}-Group`,
+      Name: `${GROUP_NAME_PREFIX}-${NAME}-group`,
       InitialVersion: {
         CoreDefinitionVersionArn: gccCoreDefResponse.LatestVersionArn,
         FunctionDefinitionVersionArn: gccFunctionResponse.LatestVersionArn,
-        
       },
     });
 
@@ -213,6 +222,7 @@ let NAME = "CORE_NAME";
     if (!fs.existsSync(certDir)) {
       fs.mkdirSync(certDir);
     }
+
     fs.writeFileSync(
       `certs/${hash}.privatekey`,
       resp.certAndKey.keyPair.PrivateKey
@@ -221,20 +231,38 @@ let NAME = "CORE_NAME";
       `certs/${hash}.publickey`,
       resp.certAndKey.keyPair.PublicKey
     );
-    await fs.writeFileSync(`certs/${hash}.pem`, resp.certAndKey.certificatePem);
-    const file = fs.createWriteStream("certs/root.ca");
+    await fs.writeFileSync(
+      `certs/${hash}.cert.pem`,
+      resp.certAndKey.certificatePem
+    );
+    const file = fs.createWriteStream("certs/root.ca.pem");
     http.get(
       "https://www.amazontrust.com/repository/G2-RootCA3.pem",
       function (response) {
         response.pipe(file);
       }
     );
+    // Updating config
+    var configTemplate = fs.readFileSync("config.template.json", "utf-8");
+    let configFile = configTemplate
+      .replace(/REGION/g, AWS_REGION)
+      .replace(/THING_ARN/g, iotThingResp.thingArn)
+      .replace(/PRIVATE_KEY/g, `${hash}.privatekey`)
+      .replace(/PEM_CERT/g, `${hash}.cert.pem`);
+    const configDir = "config";
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir);
+    }
+    fs.writeFileSync("config/config.json", configFile);
+    console.log(
+      "Config file generated successfully generated in config directory.".green
+    );
     console.log(
       "Mini Eld provisioned with AWS Cloud. Please go to console and trigger deployment"
         .green
     );
   } catch (error) {
-    console.log("Error occured".red, error);
+    console.log("Error occurred".red, error);
     console.log("Rolling back changes ..... ..".red);
     if (thingName) {
       await iotClient.send(new DeleteThingCommand({ thingName: thingName }));

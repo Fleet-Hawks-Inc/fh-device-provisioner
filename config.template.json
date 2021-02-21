@@ -1,0 +1,35 @@
+{
+    "coreThing": {
+        "caPath": "root.ca.pem",
+        "certPath": "PEM_CERT",
+        "keyPath": "PRIVATE_KEY",
+        "thingArn": "THING_ARN",
+        "iotHost": "allq1msxtunt6-ats.iot.REGION.amazonaws.com",
+        "ggHost": "greengrass-ats.iot.REGION.amazonaws.com",
+        "keepAlive": 600,
+        "ggDaemonPort": 8000,
+        "systemComponentAuthTimeout": 5000
+    },
+    "runtime": {
+        "maxWorkItemCount": 1024,
+        "maxConcurrentLimit": 25,
+        "lruSize": 25,
+        "mountAllBlockDevices": "no",
+        "cgroup": {
+            "useSystemd": "yes"
+        }
+    },
+    "managedRespawn": false,
+    "crypto": {
+        "principals": {
+            "SecretsManager": {
+                "privateKeyPath": "file:///greengrass/certs/PRIVATE_KEY"
+            },
+            "IoTCertificate": {
+                "privateKeyPath": "file:///greengrass/certs/PRIVATE_KEY",
+                "certificatePath": "file:///greengrass/certs/PEM_CERT"
+            }
+        },
+        "caPath": "file:///greengrass/certs/root.ca"
+    }
+}
