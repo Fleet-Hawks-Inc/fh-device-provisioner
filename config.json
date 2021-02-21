@@ -1,0 +1,37 @@
+{
+    "coreThing": {
+        "caPath": "root.ca.pem",
+        "certPath": "hash.cert.pem",
+        "keyPath": "hash.private.key",
+        "thingArn": "arn:partition:iot:region:account-id:thing/core-thing-name",
+        "iotHost": "host-prefix-ats.iot.region.amazonaws.com",
+        "ggHost": "greengrass-ats.iot.region.amazonaws.com",
+        "keepAlive": 600,
+        "ggDaemonPort": 8000,
+        "systemComponentAuthTimeout": 5000
+    },
+    "runtime": {
+        "maxWorkItemCount": 1024,
+        "maxConcurrentLimit": 25,
+        "lruSize": 25,
+        "mountAllBlockDevices": "no",
+        "cgroup": {
+            "useSystemd": "yes"
+        }
+    },
+    "managedRespawn": false,
+    "crypto": {
+        "principals": {
+            "SecretsManager": {
+                "privateKeyPath": "file:///greengrass/certs/hash.private.key"
+            },
+            "IoTCertificate": {
+                "privateKeyPath": "file:///greengrass/certs/hash.private.key",
+                "certificatePath": "file:///greengrass/certs/hash.cert.pem"
+            }
+        },
+        "caPath": "file:///greengrass/certs/root.ca.pem"
+    },
+    "writeDirectory": "/var/snap/aws-iot-greengrass/current/ggc-write-directory",
+    "pidFileDirectory": "/var/snap/aws-iot-greengrass/current/pidFileDirectory"
+}
