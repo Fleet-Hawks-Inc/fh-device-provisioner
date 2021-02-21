@@ -182,7 +182,7 @@ let NAME = "CORE_NAME";
 
             FunctionConfiguration: {
               Pinned: true,
-              Timeout: 300
+              Timeout: 300,
             },
           },
         ],
@@ -201,12 +201,7 @@ let NAME = "CORE_NAME";
 
     const gccCoreGroupResponse = await gccClient.send(gccCoreGroup);
     coreGroupId = gccCoreGroupResponse.Id;
-    var resp = {
-      core: gccCoreDefResponse,
-      certAndKey: iotCertKeyResp,
-      ggGroup: gccCoreGroupResponse,
-      coreDef: gccCoreGroupResponse,
-    };
+
     let RoleArn =
       "arn:aws:iam::112567001577:role/service-role/Greengrass_ServiceRole";
     const atachRole = await gccClient.send(
@@ -225,19 +220,19 @@ let NAME = "CORE_NAME";
 
     fs.writeFileSync(
       `certs/${hash}.privatekey`,
-      resp.certAndKey.keyPair.PrivateKey
+      iotCertKeyResp.keyPair.keyPair.PrivateKey
     );
     await fs.writeFileSync(
       `certs/${hash}.publickey`,
-      resp.certAndKey.keyPair.PublicKey
+      iotCertKeyResp.keyPair.PublicKey
     );
     await fs.writeFileSync(
       `certs/${hash}.cert.pem`,
-      resp.certAndKey.certificatePem
+      iotCertKeyResp.certificatePem
     );
-    const file = fs.createWriteStream("certs/root.ca.pem");
+    const file = fs.createWriteStream("certs/root.ca");
     http.get(
-      "https://www.amazontrust.com/repository/G2-RootCA3.pem",
+      "https://www.amazontrust.com/repository/AmazonRootCA1.pem",
       function (response) {
         response.pipe(file);
       }

@@ -1,6 +1,6 @@
 {
     "coreThing": {
-        "caPath": "root.ca.pem",
+        "caPath": "root.ca",
         "certPath": "PEM_CERT",
         "keyPath": "PRIVATE_KEY",
         "thingArn": "THING_ARN",
@@ -17,7 +17,8 @@
         "mountAllBlockDevices": "no",
         "cgroup": {
             "useSystemd": "yes"
-        }
+        },
+        "allowFunctionsToRunAsRoot" : "yes"
     },
     "managedRespawn": false,
     "crypto": {
