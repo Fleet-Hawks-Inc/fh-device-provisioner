@@ -220,7 +220,7 @@ let NAME = "CORE_NAME";
 
     fs.writeFileSync(
       `certs/${hash}.privatekey`,
-      iotCertKeyResp.keyPair.keyPair.PrivateKey
+      iotCertKeyResp.keyPair.PrivateKey
     );
     await fs.writeFileSync(
       `certs/${hash}.publickey`,
